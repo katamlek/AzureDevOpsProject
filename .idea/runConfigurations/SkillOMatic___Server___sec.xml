@@ -1,0 +1,15 @@
+<component name="ProjectRunConfigurationManager">
+  <configuration default="false" name="SkillOMatic - Server - sec" type="Application" factoryName="Application">
+    <envs>
+      <env name="SPRING_DATASOURCE_USERNAME" value="root" />
+      <env name="SPRING_DATASOURCE_PASSWORD" value="1234" />
+      <env name="SKILLOMATIC_DATASOURCE_DB_NAME" value="skillomaticdb" />
+      <env name="SPRING_PROFILES_ACTIVE" value="dev-security" />
+    </envs>
+    <option name="MAIN_CLASS_NAME" value="com.eficode.training.skillomatic.Application" />
+    <module name="skillomatic" />
+    <method v="2">
+      <option name="Make" enabled="true" />
+    </method>
+  </configuration>
+</component>

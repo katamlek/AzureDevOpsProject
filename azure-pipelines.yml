@@ -1,0 +1,116 @@
+# Maven package Java project Web App to Linux on Azure
+# Build your Java project and deploy it to Azure as a Linux web app
+# Add steps that analyze code, save build artifacts, deploy, and more:
+# https://docs.microsoft.com/azure/devops/pipelines/languages/java
+
+trigger:
+- master
+- feature/*
+
+variables:
+
+  # Azure Resource Manager connection created during pipeline creation
+  azureSubscription: 'a9c009bd-6982-4b08-9088-df197e7dc0bb'
+  
+  # Web app name
+  webAppName: 'skillomatic'
+
+  # Web app URL
+  webAppUrl: 'https://$(webAppName).azurewebsites.net/'
+
+  # Web app artifact
+  webAppArtifact: '$(webAppName)-main'
+
+  # Environment name
+  environmentName: 'skillomatic'
+
+  # Agent VM image name
+  vmImageName: 'ubuntu-latest'
+
+stages:
+- stage: Build
+  displayName: Build stage
+  jobs:
+  - job: MavenPackageAndPublishArtifacts
+    displayName: Maven Package and Publish Artifacts
+    pool:
+      vmImage: $(vmImageName)
+    
+    steps:
+    - task: Maven@3
+      displayName: 'Maven Package'
+      inputs:
+        mavenPomFile: 'pom.xml'
+
+    - task: CopyFiles@2
+      displayName: 'Copy Files to artifact staging directory'
+      inputs:
+        SourceFolder: '$(System.DefaultWorkingDirectory)'
+        Contents: '**/target/*.?(war|jar)'
+        TargetFolder: $(Build.ArtifactStagingDirectory)
+
+    - upload: $(Build.ArtifactStagingDirectory)
+      artifact: $(webAppArtifact)
+
+- stage: Deploy
+  displayName: Deploy stage
+  dependsOn: Build
+  condition: succeeded()
+  jobs:
+  - deployment: DeployLinuxWebApp
+    displayName: Deploy Linux Web App
+    environment: $(environmentName)
+    pool: 
+      vmImage: $(vmImageName)
+    strategy:
+      runOnce:
+        deploy:
+          steps:
+          - task: AzureWebApp@1
+            displayName: 'Azure Web App Deploy: skillomatic'
+            inputs:
+              azureSubscription: $(azureSubscription)
+              appType: webAppLinux
+              appName: $(webAppName)
+              package: '$(Pipeline.Workspace)/$(webAppArtifact)/**/target/*.?(war|jar)'
+            env: {
+              SPRING_DATASOURCE_USERNAME : $(SPRING_DATASOURCE_USERNAME),
+              SPRING_DATASOURCE_PASSWORD : $(SPRING_DATASOURCE_PASSWORD),
+              SPRING_DATASOURCE_URL      : $(SPRING_DATASOURCE_URL) 
+            }
+
+- stage: StartAppService
+  displayName: Start App Service
+  dependsOn: Deploy
+  condition: succeeded()
+  jobs:
+  - job: StartAppService
+    displayName: Start App Service using API
+    steps:
+      - task: AzureAppServiceManage@0
+        inputs:
+          azureSubscription: $(azureSubscription) 
+          Action: 'Start Azure App Service'
+          WebAppName: $(webAppName)
+
+- stage: SmokeTest
+  displayName: Smoke Test
+  dependsOn: StartAppService
+  condition: succeeded()
+  jobs:
+  - job: RunSmokeTestScript
+    displayName: Run Smoke Test Bash Script
+    steps:
+      - task: Bash@3
+        inputs:
+          targetType: 'inline'
+          script: |
+            status=`curl --silent --head $(webAppUrl) | head -1 | cut -f 2 -d' '`
+
+            if [ "$status" != "302" ]
+              then
+              echo "status was other than '302': was '$status'"
+              exit 1
+            fi
+          failOnStderr: true
+  

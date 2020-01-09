@@ -1,0 +1,54 @@
+SET @OLD_UNIQUE_CHECKS=@@UNIQUE_CHECKS, UNIQUE_CHECKS=0;
+SET @OLD_FOREIGN_KEY_CHECKS=@@FOREIGN_KEY_CHECKS, FOREIGN_KEY_CHECKS=0;
+SET @OLD_SQL_MODE=@@SQL_MODE, SQL_MODE='ONLY_FULL_GROUP_BY,STRICT_TRANS_TABLES,NO_ZERO_IN_DATE,NO_ZERO_DATE,ERROR_FOR_DIVISION_BY_ZERO,NO_ENGINE_SUBSTITUTION';
+
+CREATE SCHEMA IF NOT EXISTS `${skillomaticdb}` DEFAULT CHARACTER SET utf8 ;
+
+CREATE TABLE IF NOT EXISTS `${skillomaticdb}`.`person_profile` (
+  `id` BIGINT(19) UNSIGNED NOT NULL AUTO_INCREMENT,
+  `uid` BINARY(16) NOT NULL,
+  `first_name` VARCHAR(255) NOT NULL,
+  `last_name` VARCHAR(255) NOT NULL,
+  `email_address` VARCHAR(255) NOT NULL,
+  PRIMARY KEY (`id`),
+  UNIQUE INDEX `uid_UNIQUE` (`uid` ASC))
+ENGINE = InnoDB
+DEFAULT CHARACTER SET = utf8;
+
+CREATE TABLE IF NOT EXISTS `${skillomaticdb}`.`skill` (
+  `id` BIGINT(19) UNSIGNED NOT NULL AUTO_INCREMENT,
+  `uid` BINARY(16) NOT NULL,
+  `skill_name` VARCHAR(255) NOT NULL,
+  PRIMARY KEY (`id`),
+  UNIQUE INDEX `uid_UNIQUE` (`uid` ASC),
+  UNIQUE INDEX `name_UNIQUE` (`skill_name` ASC)
+  )
+ENGINE = InnoDB
+DEFAULT CHARACTER SET = utf8;
+
+CREATE TABLE IF NOT EXISTS `${skillomaticdb}`.`person_skill` (
+  `id` BIGINT(19) UNSIGNED NOT NULL AUTO_INCREMENT,
+  `person_profile_id` BIGINT(19) UNSIGNED NOT NULL,
+  `skill_id` BIGINT(19) UNSIGNED NOT NULL,
+  `skill_score` BIGINT(19) UNSIGNED NOT NULL,
+  PRIMARY KEY (`id`),
+  INDEX `fk_person_profile_idx` (`person_profile_id` ASC),
+  INDEX `fk_skill_idx` (`skill_id` ASC),
+  UNIQUE INDEX `unique_mapping` (`person_profile_id` ASC, `skill_id` ASC),
+  CONSTRAINT `fk_person_profile`
+    FOREIGN KEY (`person_profile_id`)
+    REFERENCES `${skillomaticdb}`.`person_profile` (`id`)
+    ON DELETE NO ACTION
+    ON UPDATE NO ACTION,
+  CONSTRAINT `fk_skill`
+    FOREIGN KEY (`skill_id`)
+    REFERENCES `${skillomaticdb}`.`skill` (`id`)
+    ON DELETE NO ACTION
+    ON UPDATE NO ACTION)
+ENGINE = InnoDB
+DEFAULT CHARACTER SET = utf8;
+
+
+SET SQL_MODE=@OLD_SQL_MODE;
+SET FOREIGN_KEY_CHECKS=@OLD_FOREIGN_KEY_CHECKS;
+SET UNIQUE_CHECKS=@OLD_UNIQUE_CHECKS;
