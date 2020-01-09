@@ -135,7 +135,8 @@ public class PersonProfileController {
     public ResponseEntity<PersonSkillDto> addPersonSkill(
             @PathVariable(PERSON_PROFILE_ID) UUID personProfileId,
             @RequestBody PersonSkillDto personSkillDto
-    ) {
+    )
+    {
         //TODO - filter the input
 
         if (!personProfileId.equals(personSkillDto.getPersonProfileId())) {
